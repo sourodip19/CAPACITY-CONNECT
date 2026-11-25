@@ -1,0 +1,50 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Quiz Result - {{ quiz.title }} | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link active" href="{% url 'quizzes:quiz_list' course.pk %}"><i class="bi bi-ui-checks"></i>Quizzes</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="h3 mb-1">Quiz Result</h1>
+    <p class="text-muted mb-0">{{ quiz.title }} — {{ course.title }}</p>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 text-center">
+            <div class="col-md-4"><div class="text-muted small">Score</div><div class="h3 mb-0">{{ attempt.score }}/{{ attempt.total_questions }}</div></div>
+            <div class="col-md-4"><div class="text-muted small">Percentage</div><div class="h3 mb-0">{{ attempt.percentage }}%</div></div>
+            <div class="col-md-4"><div class="text-muted small">Submitted</div><div class="h5 mb-0">{{ attempt.submitted_at|date:"M d, Y H:i" }}</div></div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header fw-semibold">Answer Review</div>
+    <div class="card-body">
+        {% for answer in attempt.answers.all %}
+        <div class="mb-4 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <h2 class="h6">Q{{ forloop.counter }}. {{ answer.question.text }}</h2>
+            <p class="mb-1"><span class="text-muted">Your answer:</span>
+                {% if answer.selected_option %}
+                    {{ answer.selected_option.text }}
+                    {% if answer.selected_option.is_correct %}
+                        <span class="badge text-bg-success ms-1">Correct</span>
+                    {% else %}
+                        <span class="badge text-bg-danger ms-1">Incorrect</span>
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">No answer</span>
+                {% endif %}
+            </p>
+            {% for option in answer.question.options.all %}
+                {% if option.is_correct %}
+                <p class="mb-0 small text-success"><i class="bi bi-check-circle me-1"></i>Correct answer: {{ option.text }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% empty %}
+        <p class="text-muted mb-0">No answers recorded.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

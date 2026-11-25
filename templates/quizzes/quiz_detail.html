@@ -1,0 +1,64 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}{{ quiz.title }} | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link" href="{% url 'quizzes:quiz_list' course.pk %}"><i class="bi bi-ui-checks"></i>Quizzes</a>
+    <a class="nav-link active" href="{% url 'quizzes:quiz_detail' quiz.pk %}"><i class="bi bi-card-checklist"></i>Quiz Detail</a>
+{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">{{ quiz.title }}</h1>
+        <p class="text-muted mb-0">{{ course.title }} {% if quiz.is_published %}<span class="badge text-bg-success ms-2">Published</span>{% else %}<span class="badge text-bg-secondary ms-2">Draft</span>{% endif %}</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if can_manage %}
+        <a href="{% url 'quizzes:question_add' quiz.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Question</a>
+        <a href="{% url 'quizzes:quiz_edit' quiz.pk %}" class="btn btn-outline-primary">Edit Quiz</a>
+        <a href="{% url 'quizzes:quiz_delete' quiz.pk %}" class="btn btn-outline-danger">Delete</a>
+        {% elif user.role == 'STUDENT' and not attempt and quiz.is_published %}
+        <a href="{% url 'quizzes:quiz_take' quiz.pk %}" class="btn btn-primary">Take Quiz</a>
+        {% elif attempt %}
+        <a href="{% url 'quizzes:quiz_result' quiz.pk %}" class="btn btn-outline-primary">View Result</a>
+        {% endif %}
+    </div>
+</div>
+{% if quiz.description %}<div class="card mb-4"><div class="card-body">{{ quiz.description|linebreaks }}</div></div>{% endif %}
+
+{% if user.role == 'STUDENT' and attempt %}
+<div class="alert alert-info">You scored <strong>{{ attempt.score }}/{{ attempt.total_questions }}</strong> ({{ attempt.percentage }}%). <a href="{% url 'quizzes:quiz_result' quiz.pk %}">View detailed result</a>.</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header fw-semibold">Questions ({{ questions|length }})</div>
+    <div class="card-body">
+        {% for question in questions %}
+        <div class="mb-4 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between gap-2">
+                <h2 class="h6 mb-2">Q{{ forloop.counter }}. {{ question.text }}</h2>
+                {% if can_manage %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'quizzes:question_edit' question.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form method="post" action="{% url 'quizzes:question_delete' question.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="Delete this question?">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            <ul class="list-unstyled mb-0 ms-1">
+                {% for option in question.options.all %}
+                <li class="mb-1">
+                    {% if can_manage and option.is_correct %}<i class="bi bi-check-circle-fill text-success me-1"></i>{% else %}<i class="bi bi-circle me-1 text-muted"></i>{% endif %}
+                    {{ option.text }}
+                    {% if can_manage and option.is_correct %}<span class="badge text-bg-success ms-1">Correct</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <div class="empty-state"><i class="bi bi-question-circle"></i><p class="mb-0">No questions added yet.</p></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

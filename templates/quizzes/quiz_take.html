@@ -1,0 +1,32 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Take Quiz - {{ quiz.title }} | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link active" href="{% url 'quizzes:quiz_list' course.pk %}"><i class="bi bi-ui-checks"></i>Quizzes</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="h3 mb-1">{{ quiz.title }}</h1>
+    <p class="text-muted mb-0">{{ course.title }} — Answer all questions and submit. You can attempt this quiz only once.</p>
+</div>
+<form method="post">
+    {% csrf_token %}
+    {% for question in questions %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h2 class="h6 mb-3">Q{{ forloop.counter }}. {{ question.text }}</h2>
+            {% for option in question.options.all %}
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                <label class="form-check-label" for="option_{{ option.id }}">{{ option.text }}</label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" data-confirm="Submit your quiz? You cannot attempt it again.">Submit Quiz</button>
+        <a href="{% url 'quizzes:quiz_list' course.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

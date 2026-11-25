@@ -63,6 +63,18 @@
             </div>
         </div>
 
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">Quizzes</h2>
+                <p class="text-muted small">Attempt course quizzes and view your results.</p>
+                {% if is_owner or is_admin or enrollment %}
+                <a href="{% url 'quizzes:quiz_list' course.pk %}" class="btn btn-outline-primary w-100">View Quizzes</a>
+                {% else %}
+                <div class="text-muted small">Enroll in this course to access quizzes.</div>
+                {% endif %}
+            </div>
+        </div>
+
         {% if is_owner or is_admin %}
         <div class="card">
             <div class="card-body">

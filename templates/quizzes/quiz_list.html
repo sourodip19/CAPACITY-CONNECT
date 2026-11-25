@@ -1,0 +1,50 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Quizzes - {{ course.title }} | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link" href="{% url 'courses:course_detail' course.pk %}"><i class="bi bi-journal-text"></i>Course Details</a>
+    <a class="nav-link active" href="{% url 'quizzes:quiz_list' course.pk %}"><i class="bi bi-ui-checks"></i>Quizzes</a>
+{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div><h1 class="h3 mb-1">Quizzes</h1><p class="text-muted mb-0">{{ course.title }}</p></div>
+    {% if can_manage %}
+    <a href="{% url 'quizzes:quiz_create' course.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Quiz</a>
+    {% endif %}
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>Quiz</th><th>Status</th><th>Questions</th><th>Your Result</th><th></th></tr></thead>
+            <tbody>
+            {% for quiz in quizzes %}
+                <tr>
+                    <td><div class="fw-semibold">{{ quiz.title }}</div><div class="small text-muted">{{ quiz.description|default:"No description" }}</div></td>
+                    <td>{% if quiz.is_published %}<span class="badge text-bg-success">Published</span>{% else %}<span class="badge text-bg-secondary">Draft</span>{% endif %}</td>
+                    <td>{{ quiz.questions.count }}</td>
+                    <td>
+                        {% if user.role == 'STUDENT' %}
+                            {% if quiz.user_attempt %}
+                                <span class="badge text-bg-primary">{{ quiz.user_attempt.score }}/{{ quiz.user_attempt.total_questions }} ({{ quiz.user_attempt.percentage }}%)</span>
+                            {% else %}
+                                <span class="text-muted small">Not attempted</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'quizzes:quiz_detail' quiz.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                        {% if can_manage %}
+                        <a href="{% url 'quizzes:quiz_edit' quiz.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5"><div class="empty-state"><i class="bi bi-ui-checks"></i><p class="mb-0">No quizzes available yet.</p></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

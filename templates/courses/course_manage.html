@@ -28,6 +28,7 @@
                     <td>{{ course.enrollments.count }}</td>
                     <td class="text-end">
                         <a href="{% url 'materials:material_list' course.pk %}" class="btn btn-sm btn-outline-secondary">Materials</a>
+                        <a href="{% url 'quizzes:quiz_list' course.pk %}" class="btn btn-sm btn-outline-secondary">Quizzes</a>
                         <a href="{% url 'courses:course_edit' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
                         <a href="{% url 'courses:course_delete' course.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
                     </td>
