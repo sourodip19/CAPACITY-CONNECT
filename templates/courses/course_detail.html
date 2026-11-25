@@ -51,6 +51,18 @@
         </div>
         {% endif %}
 
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">Learning Materials</h2>
+                <p class="text-muted small">Access PDFs and external learning resources for this course.</p>
+                {% if is_owner or is_admin or enrollment %}
+                <a href="{% url 'materials:material_list' course.pk %}" class="btn btn-outline-primary w-100">View Materials</a>
+                {% else %}
+                <div class="text-muted small">Enroll in this course to access materials.</div>
+                {% endif %}
+            </div>
+        </div>
+
         {% if is_owner or is_admin %}
         <div class="card">
             <div class="card-body">
