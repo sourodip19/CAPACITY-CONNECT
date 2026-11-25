@@ -2,7 +2,8 @@
 {% block title %}Trainer Dashboard | Capacity Connect{% endblock %}
 {% block sidebar %}
     <a class="nav-link active" href="{% url 'accounts:trainer_dashboard' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
-    <a class="nav-link" href="{% url 'courses:course_list' %}"><i class="bi bi-journal-text"></i>Courses</a>
+    <a class="nav-link" href="{% url 'courses:course_manage' %}"><i class="bi bi-journal-text"></i>Manage Courses</a>
+    <a class="nav-link" href="{% url 'courses:course_create' %}"><i class="bi bi-plus-circle"></i>Create Course</a>
     <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
 {% endblock %}
 {% block content %}
@@ -29,7 +30,7 @@
                     <td>{{ course.created_at|date:"M d, Y" }}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4"><div class="empty-state"><i class="bi bi-journal-plus"></i><p class="mb-0">No courses yet. Course creation will be available in Phase 3.</p></div></td></tr>
+                <tr><td colspan="4"><div class="empty-state"><i class="bi bi-journal-plus"></i><p class="mb-0">No courses yet. <a href="{% url 'courses:course_create' %}">Create your first course</a>.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>

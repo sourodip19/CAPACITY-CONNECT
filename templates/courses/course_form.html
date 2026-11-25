@@ -1,0 +1,25 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}{{ title }} | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link active" href="{% url 'courses:course_manage' %}"><i class="bi bi-journal-text"></i>Manage Courses</a>
+    <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="h3 mb-1">{{ title }}</h1>
+    <p class="text-muted mb-0">Provide course details and publishing status.</p>
+</div>
+<div class="card" style="max-width:860px;">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% include 'includes/form_fields.html' with form=form %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Course</button>
+                <a href="{% url 'courses:course_manage' %}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

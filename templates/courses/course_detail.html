@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} | Capacity Connect{% endblock %}
+{% block content %}
+<div class="mb-3"><a href="{% url 'courses:course_list' %}" class="text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Back to courses</a></div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" class="card-img-top" alt="{{ course.title }}" style="max-height:320px;object-fit:cover;">
+            {% endif %}
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="badge text-bg-light">{{ course.category }}</span>
+                    <span class="badge badge-status-{{ course.status|lower }}">{{ course.get_status_display }}</span>
+                </div>
+                <h1 class="h3">{{ course.title }}</h1>
+                <p class="text-muted mb-3">By {{ course.trainer.get_full_name|default:course.trainer.username }}</p>
+                <div class="mb-0">{{ course.description|linebreaks }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">Course Info</h2>
+                <dl class="mb-0 small">
+                    <dt>Trainer</dt><dd>{{ course.trainer.get_full_name|default:course.trainer.username }}</dd>
+                    <dt>Category</dt><dd>{{ course.category }}</dd>
+                    <dt>Status</dt><dd>{{ course.get_status_display }}</dd>
+                    <dt>Enrollments</dt><dd>{{ enrollments_count }}</dd>
+                    <dt>Created</dt><dd class="mb-0">{{ course.created_at|date:"M d, Y" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% if user.is_authenticated and user.role == 'STUDENT' %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">Enrollment</h2>
+                {% if enrollment %}
+                    <div class="alert alert-success mb-0">You are enrolled in this course.</div>
+                {% elif course.status == 'PUBLISHED' %}
+                    <form method="post" action="{% url 'courses:enroll_course' course.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">Enroll Now</button>
+                    </form>
+                {% else %}
+                    <div class="text-muted">Enrollment is not available for this course.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if is_owner or is_admin %}
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">Manage</h2>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'courses:course_edit' course.pk %}" class="btn btn-outline-primary">Edit Course</a>
+                    <a href="{% url 'courses:course_delete' course.pk %}" class="btn btn-outline-danger">Delete Course</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
