@@ -1,0 +1,65 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Manage Users | Capacity Connect{% endblock %}
+{% block sidebar %}
+    <a class="nav-link" href="{% url 'accounts:admin_dashboard' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+    <a class="nav-link active" href="{% url 'accounts:manage_users' %}"><i class="bi bi-people"></i>Manage Users</a>
+    <a class="nav-link" href="{% url 'accounts:create_trainer' %}"><i class="bi bi-person-plus"></i>Create Trainer</a>
+    <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
+{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Manage Users</h1>
+        <p class="text-muted mb-0">View, filter, and activate/deactivate accounts.</p>
+    </div>
+    <a href="{% url 'accounts:create_trainer' %}" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Create Trainer</a>
+</div>
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-select">
+                    <option value="">All roles</option>
+                    <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
+                    <option value="TRAINER" {% if selected_role == 'TRAINER' %}selected{% endif %}>Trainer</option>
+                    <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
+                </select>
+            </div>
+            <div class="col-sm-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+            <tbody>
+            {% for u in users %}
+                <tr>
+                    <td>{{ u.get_full_name|default:u.username }}<div class="small text-muted">@{{ u.username }}</div></td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.get_role_display }}</td>
+                    <td>{% if u.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}</td>
+                    <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        {% if u != user and not u.is_superuser %}
+                        <form method="post" action="{% url 'accounts:toggle_user_active' u.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" data-confirm="Are you sure you want to {% if u.is_active %}deactivate{% else %}activate{% endif %} this account?">
+                                {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="text-muted p-4">No users found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
