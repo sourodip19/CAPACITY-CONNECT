@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from courses.models import Course, Enrollment
 from notifications.models import Notification
+from progress.services import attach_progress_to_enrollments, sync_enrollment_status
 
 from .decorators import admin_required, student_required, trainer_required
 from .forms import (
@@ -104,14 +105,42 @@ def password_change_view(request):
 
 @admin_required
 def admin_dashboard(request):
+    all_enrollments = attach_progress_to_enrollments(Enrollment.objects.select_related("course", "student").all())
+    for enrollment in all_enrollments:
+        progress = enrollment.progress
+        if progress["total_items"] > 0 and progress["completed_items"] >= progress["total_items"]:
+            new_status = Enrollment.Status.COMPLETED
+        elif enrollment.status == Enrollment.Status.COMPLETED:
+            new_status = Enrollment.Status.ACTIVE
+        else:
+            new_status = enrollment.status
+        if enrollment.status != new_status:
+            enrollment.status = new_status
+            enrollment.save(update_fields=["status", "updated_at"])
+    completed_enrollments = sum(1 for e in all_enrollments if e.status == Enrollment.Status.COMPLETED)
+    avg_progress = round(sum(e.progress["percentage"] for e in all_enrollments) / len(all_enrollments), 1) if all_enrollments else 0.0
+
+    recent_courses = list(Course.objects.select_related("trainer").order_by("-created_at")[:5])
+    recent_course_ids = [c.id for c in recent_courses]
+    recent_enrollments = [e for e in all_enrollments if e.course_id in recent_course_ids]
+    progress_by_course = {}
+    for enrollment in recent_enrollments:
+        progress_by_course.setdefault(enrollment.course_id, []).append(enrollment.progress["percentage"])
+    for course in recent_courses:
+        percentages = progress_by_course.get(course.id, [])
+        course.average_progress = round(sum(percentages) / len(percentages), 1) if percentages else 0.0
+        course.enrollment_count = len(percentages)
+
     context = {
         "total_users": User.objects.count(),
         "total_students": User.objects.filter(role=User.Role.STUDENT).count(),
         "total_trainers": User.objects.filter(role=User.Role.TRAINER).count(),
         "total_courses": Course.objects.count(),
-        "total_enrollments": Enrollment.objects.count(),
+        "total_enrollments": len(all_enrollments),
+        "completed_enrollments": completed_enrollments,
+        "average_progress": avg_progress,
         "recent_users": User.objects.order_by("-date_joined")[:5],
-        "recent_courses": Course.objects.select_related("trainer").order_by("-created_at")[:5],
+        "recent_courses": recent_courses,
     }
     return render(request, "accounts/admin_dashboard.html", context)
 
@@ -153,12 +182,25 @@ def toggle_user_active(request, user_id):
 
 @trainer_required
 def trainer_dashboard(request):
-    courses = Course.objects.filter(trainer=request.user).order_by("-created_at")
-    course_ids = courses.values_list("id", flat=True)
+    courses_qs = Course.objects.filter(trainer=request.user).order_by("-created_at")
+    courses = list(courses_qs[:5])
+    course_ids = list(courses_qs.values_list("id", flat=True))
+
+    enrollments = attach_progress_to_enrollments(
+        Enrollment.objects.filter(course_id__in=[c.id for c in courses]).select_related("course", "student")
+    )
+    progress_by_course = {}
+    for enrollment in enrollments:
+        progress_by_course.setdefault(enrollment.course_id, []).append(enrollment.progress["percentage"])
+    for course in courses:
+        percentages = progress_by_course.get(course.id, [])
+        course.enrollment_count = len(percentages)
+        course.average_progress = round(sum(percentages) / len(percentages), 1) if percentages else 0.0
+
     context = {
-        "courses": courses[:5],
-        "course_count": courses.count(),
-        "published_count": courses.filter(status=Course.Status.PUBLISHED).count(),
+        "courses": courses,
+        "course_count": courses_qs.count(),
+        "published_count": courses_qs.filter(status=Course.Status.PUBLISHED).count(),
         "enrollment_count": Enrollment.objects.filter(course_id__in=course_ids).count(),
     }
     return render(request, "accounts/trainer_dashboard.html", context)
@@ -166,16 +208,28 @@ def trainer_dashboard(request):
 
 @student_required
 def student_dashboard(request):
-    enrollments = (
+    enrollments_qs = (
         Enrollment.objects.filter(student=request.user)
         .select_related("course", "course__trainer")
         .order_by("-enrolled_at")
     )
+    enrollments = attach_progress_to_enrollments(enrollments_qs)
+    for enrollment in enrollments:
+        progress = enrollment.progress
+        if progress["total_items"] > 0 and progress["completed_items"] >= progress["total_items"]:
+            new_status = Enrollment.Status.COMPLETED
+        else:
+            new_status = Enrollment.Status.ACTIVE if enrollment.status == Enrollment.Status.COMPLETED else enrollment.status
+        if enrollment.status != new_status:
+            enrollment.status = new_status
+            enrollment.save(update_fields=["status", "updated_at"])
+
     unread_notifications = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    completed_count = sum(1 for e in enrollments if e.status == Enrollment.Status.COMPLETED)
     context = {
         "enrollments": enrollments[:5],
-        "enrollment_count": enrollments.count(),
-        "completed_count": enrollments.filter(status=Enrollment.Status.COMPLETED).count(),
+        "enrollment_count": len(enrollments),
+        "completed_count": completed_count,
         "unread_notifications": unread_notifications,
     }
     return render(request, "accounts/student_dashboard.html", context)

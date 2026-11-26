@@ -5,6 +5,7 @@
     <a class="nav-link" href="{% url 'accounts:manage_users' %}"><i class="bi bi-people"></i>Manage Users</a>
     <a class="nav-link" href="{% url 'accounts:create_trainer' %}"><i class="bi bi-person-plus"></i>Create Trainer</a>
     <a class="nav-link" href="{% url 'courses:course_manage' %}"><i class="bi bi-journal-text"></i>Manage Courses</a>
+    <a class="nav-link" href="{% url 'notifications:notification_list' %}"><i class="bi bi-bell"></i>Notifications</a>
     <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
 {% endblock %}
 {% block content %}
@@ -16,10 +17,9 @@
     <a href="{% url 'accounts:create_trainer' %}" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Create Trainer</a>
 </div>
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Total Users</div><div class="h3 mb-0">{{ total_users }}</div></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Students</div><div class="h3 mb-0">{{ total_students }}</div></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Trainers</div><div class="h3 mb-0">{{ total_trainers }}</div></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Courses</div><div class="h3 mb-0">{{ total_courses }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Total Users</div><div class="h3 mb-0">{{ total_users }}</div><div class="small text-muted">{{ total_students }} students, {{ total_trainers }} trainers</div></div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Courses / Enrollments</div><div class="h3 mb-0">{{ total_courses }} / {{ total_enrollments }}</div><div class="small text-muted">{{ completed_enrollments }} completed enrollments</div></div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="card stat-card"><div class="card-body"><div class="text-muted small">Average Learner Progress</div><div class="h3 mb-0">{{ average_progress }}%</div><div class="progress mt-2" role="progressbar" aria-valuenow="{{ average_progress }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-success" style="width: {{ average_progress }}%"></div></div></div></div></div>
 </div>
 <div class="row g-4">
     <div class="col-lg-6">
@@ -47,17 +47,21 @@
         <div class="card h-100">
             <div class="card-header fw-semibold">Recent Courses</div>
             <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead><tr><th>Course</th><th>Trainer</th><th>Status</th></tr></thead>
+                <table class="table mb-0 align-middle">
+                    <thead><tr><th>Course</th><th>Enrollments</th><th>Avg. Progress</th><th>Status</th></tr></thead>
                     <tbody>
                     {% for course in recent_courses %}
                         <tr>
-                            <td>{{ course.title }}</td>
-                            <td>{{ course.trainer.get_full_name|default:course.trainer.username }}</td>
+                            <td>{{ course.title }}<div class="small text-muted">{{ course.trainer.get_full_name|default:course.trainer.username }}</div></td>
+                            <td>{{ course.enrollment_count }}</td>
+                            <td style="min-width: 140px;">
+                                <div class="small mb-1">{{ course.average_progress }}%</div>
+                                <div class="progress" role="progressbar" aria-valuenow="{{ course.average_progress }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-success" style="width: {{ course.average_progress }}%"></div></div>
+                            </td>
                             <td><span class="badge badge-status-{{ course.status|lower }}">{{ course.get_status_display }}</span></td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="3" class="text-muted p-4">No courses yet.</td></tr>
+                        <tr><td colspan="4" class="text-muted p-4">No courses yet.</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>

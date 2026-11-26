@@ -19,18 +19,27 @@
 <div class="card">
     <div class="card-header fw-semibold">My Enrollments</div>
     <div class="table-responsive">
-        <table class="table mb-0">
-            <thead><tr><th>Course</th><th>Trainer</th><th>Status</th><th>Enrolled</th></tr></thead>
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Course</th><th>Trainer</th><th>Progress</th><th>Status</th><th>Enrolled</th></tr></thead>
             <tbody>
             {% for enrollment in enrollments %}
                 <tr>
                     <td><a href="{% url 'courses:course_detail' enrollment.course.pk %}">{{ enrollment.course.title }}</a></td>
                     <td>{{ enrollment.course.trainer.get_full_name|default:enrollment.course.trainer.username }}</td>
+                    <td style="min-width: 180px;">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>{{ enrollment.progress.completed_items }}/{{ enrollment.progress.total_items }} items</span>
+                            <span>{{ enrollment.progress.percentage }}%</span>
+                        </div>
+                        <div class="progress" role="progressbar" aria-valuenow="{{ enrollment.progress.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-success" style="width: {{ enrollment.progress.percentage }}%"></div>
+                        </div>
+                    </td>
                     <td><span class="badge text-bg-light">{{ enrollment.get_status_display }}</span></td>
                     <td>{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4"><div class="empty-state"><i class="bi bi-journal-bookmark"></i><p class="mb-0">You have not enrolled in any courses yet. <a href="{% url 'courses:course_list' %}">Browse courses</a>.</p></div></td></tr>
+                <tr><td colspan="5"><div class="empty-state"><i class="bi bi-journal-bookmark"></i><p class="mb-0">You have not enrolled in any courses yet. <a href="{% url 'courses:course_list' %}">Browse courses</a>.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>

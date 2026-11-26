@@ -38,7 +38,20 @@
             <div class="card-body">
                 <h2 class="h5">Enrollment</h2>
                 {% if enrollment %}
-                    <div class="alert alert-success mb-0">You are enrolled in this course.</div>
+                    <div class="alert alert-success mb-3">You are enrolled in this course.</div>
+                    {% if progress %}
+                    <div class="mb-2 d-flex justify-content-between small">
+                        <span class="fw-semibold">Progress</span>
+                        <span>{{ progress.percentage }}%</span>
+                    </div>
+                    <div class="progress mb-2" role="progressbar" aria-label="Course progress" aria-valuenow="{{ progress.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-success" style="width: {{ progress.percentage }}%"></div>
+                    </div>
+                    <div class="small text-muted">
+                        {{ progress.completed_items }} of {{ progress.total_items }} items complete
+                        ({{ progress.completed_materials }}/{{ progress.total_materials }} materials, {{ progress.completed_quizzes }}/{{ progress.total_quizzes }} quizzes).
+                    </div>
+                    {% endif %}
                 {% elif course.status == 'PUBLISHED' %}
                     <form method="post" action="{% url 'courses:enroll_course' course.pk %}">
                         {% csrf_token %}

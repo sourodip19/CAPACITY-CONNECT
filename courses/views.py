@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.decorators import role_required
 from accounts.models import User
+from notifications.services import notify_user
+from progress.services import get_course_progress, sync_enrollment_status
 
 from .forms import CourseForm
 from .models import Course, Enrollment
@@ -60,8 +62,11 @@ def course_detail(request, pk):
         return redirect("courses:course_list")
 
     enrollment = None
+    progress = None
     if request.user.is_authenticated and request.user.role == User.Role.STUDENT:
         enrollment = Enrollment.objects.filter(student=request.user, course=course).first()
+        if enrollment:
+            progress = sync_enrollment_status(enrollment)
 
     enrollments_count = course.enrollments.count()
     return render(
@@ -70,6 +75,7 @@ def course_detail(request, pk):
         {
             "course": course,
             "enrollment": enrollment,
+            "progress": progress,
             "is_owner": is_owner,
             "is_admin": is_admin,
             "enrollments_count": enrollments_count,
@@ -131,6 +137,17 @@ def enroll_course(request, pk):
     if request.method == "POST":
         enrollment, created = Enrollment.objects.get_or_create(student=request.user, course=course)
         if created:
+            notify_user(
+                course.trainer,
+                f"{request.user.get_full_name() or request.user.username} enrolled in {course.title}.",
+                sender=request.user,
+                link=f"/courses/{course.pk}/",
+            )
+            notify_user(
+                request.user,
+                f"You enrolled in {course.title}.",
+                link=f"/courses/{course.pk}/",
+            )
             messages.success(request, f"You have enrolled in {course.title}.")
         else:
             messages.info(request, "You are already enrolled in this course.")

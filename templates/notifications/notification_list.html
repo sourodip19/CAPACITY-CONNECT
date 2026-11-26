@@ -1,4 +1,4 @@
-{% extends 'dashboard_base.html' %}
+﻿{% extends 'dashboard_base.html' %}
 {% block title %}Notifications | Capacity Connect{% endblock %}
 {% block sidebar %}
     <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
@@ -6,6 +6,40 @@
     <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
 {% endblock %}
 {% block content %}
-<div class="page-header"><h1 class="h3 mb-1">Notifications</h1><p class="text-muted mb-0">Your recent notifications.</p></div>
-<div class="card"><div class="card-body empty-state"><i class="bi bi-bell"></i><p class="mb-0">Notifications will be fully implemented in Phase 6.</p></div></div>
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Notifications</h1>
+        <p class="text-muted mb-0">Stay updated on course activity and learning progress.</p>
+    </div>
+    <form method="post" action="{% url 'notifications:notification_mark_all_read' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-check2-all me-1"></i>Mark all as read</button>
+    </form>
+</div>
+<div class="card">
+    <div class="list-group list-group-flush">
+        {% for notification in notifications %}
+        <a href="{% url 'notifications:notification_mark_read' notification.pk %}" class="list-group-item list-group-item-action py-3 {% if not notification.is_read %}bg-light{% endif %}">
+            <div class="d-flex w-100 justify-content-between gap-3">
+                <div>
+                    <div class="{% if not notification.is_read %}fw-semibold{% endif %}">
+                        {% if not notification.is_read %}<span class="badge text-bg-primary me-1">New</span>{% endif %}
+                        {{ notification.message }}
+                    </div>
+                    <div class="small text-muted mt-1">
+                        {% if notification.sender %}From {{ notification.sender.get_full_name|default:notification.sender.username }} · {% endif %}
+                        {{ notification.created_at|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+                <div class="text-muted small text-nowrap">{% if notification.link %}<i class="bi bi-arrow-right"></i>{% endif %}</div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="card-body empty-state">
+            <i class="bi bi-bell"></i>
+            <p class="mb-0">You have no notifications yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from accounts.decorators import role_required
 from accounts.models import User
 from courses.models import Course, Enrollment
+from notifications.services import notify_users
+from progress.services import sync_enrollment_status
 
 from .forms import LearningMaterialForm
 from .models import LearningMaterial, MaterialCompletion
@@ -60,6 +62,13 @@ def material_create(request, course_pk):
         material = form.save(commit=False)
         material.course = course
         material.save()
+        recipients = User.objects.filter(enrollments__course=course, role=User.Role.STUDENT, is_active=True).distinct()
+        notify_users(
+            recipients,
+            f"New material added in {course.title}: {material.title}.",
+            sender=request.user,
+            link=f"/materials/course/{course.pk}/",
+        )
         messages.success(request, "Learning material added successfully.")
         return redirect("materials:material_list", course_pk=course.pk)
     return render(request, "materials/material_form.html", {"form": form, "course": course, "title": "Add Material"})
@@ -104,6 +113,9 @@ def material_complete(request, pk):
         return redirect("courses:course_detail", pk=course.pk)
     if request.method == "POST":
         _, created = MaterialCompletion.objects.get_or_create(student=request.user, material=material)
+        enrollment = Enrollment.objects.filter(student=request.user, course=course).first()
+        if enrollment:
+            sync_enrollment_status(enrollment)
         if created:
             messages.success(request, f"Marked '{material.title}' as complete.")
         else:

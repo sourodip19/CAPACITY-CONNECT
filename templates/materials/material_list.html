@@ -4,6 +4,7 @@
     <a class="nav-link" href="{% url 'accounts:dashboard_redirect' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
     <a class="nav-link" href="{% url 'courses:course_detail' course.pk %}"><i class="bi bi-journal-text"></i>Course Details</a>
     <a class="nav-link active" href="{% url 'materials:material_list' course.pk %}"><i class="bi bi-folder2-open"></i>Materials</a>
+    <a class="nav-link" href="{% url 'notifications:notification_list' %}"><i class="bi bi-bell"></i>Notifications</a>
     <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
 {% endblock %}
 {% block content %}

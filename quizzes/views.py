@@ -7,6 +7,8 @@ from django.utils import timezone
 from accounts.decorators import role_required
 from accounts.models import User
 from courses.models import Course, Enrollment
+from notifications.services import notify_user, notify_users
+from progress.services import sync_enrollment_status
 
 from .forms import AnswerOptionFormSet, QuestionForm, QuizForm
 from .models import AnswerOption, Question, Quiz, QuizAttempt, StudentAnswer
@@ -57,6 +59,14 @@ def quiz_create(request, course_pk):
         quiz.course = course
         quiz.created_by = request.user
         quiz.save()
+        if quiz.is_published:
+            recipients = User.objects.filter(enrollments__course=course, role=User.Role.STUDENT, is_active=True).distinct()
+            notify_users(
+                recipients,
+                f"New quiz published in {course.title}: {quiz.title}.",
+                sender=request.user,
+                link=f"/quizzes/{quiz.pk}/",
+            )
         messages.success(request, "Quiz created successfully. Add questions next.")
         return redirect("quizzes:quiz_detail", pk=quiz.pk)
     return render(request, "quizzes/quiz_form.html", {"form": form, "course": course, "title": "Create Quiz"})
@@ -88,9 +98,18 @@ def quiz_edit(request, pk):
     if not _can_manage_course(request.user, quiz.course):
         messages.error(request, "You do not have permission to edit this quiz.")
         return redirect("quizzes:quiz_detail", pk=pk)
+    was_published = quiz.is_published
     form = QuizForm(request.POST or None, instance=quiz)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        quiz = form.save()
+        if quiz.is_published and not was_published:
+            recipients = User.objects.filter(enrollments__course=quiz.course, role=User.Role.STUDENT, is_active=True).distinct()
+            notify_users(
+                recipients,
+                f"New quiz published in {quiz.course.title}: {quiz.title}.",
+                sender=request.user,
+                link=f"/quizzes/{quiz.pk}/",
+            )
         messages.success(request, "Quiz updated successfully.")
         return redirect("quizzes:quiz_detail", pk=quiz.pk)
     return render(request, "quizzes/quiz_form.html", {"form": form, "course": quiz.course, "quiz": quiz, "title": "Edit Quiz"})
@@ -220,6 +239,15 @@ def quiz_take(request, pk):
         except IntegrityError:
             messages.info(request, "You have already attempted this quiz.")
             return redirect("quizzes:quiz_result", pk=quiz.pk)
+
+        enrollment = Enrollment.objects.filter(student=request.user, course=course).first()
+        if enrollment:
+            sync_enrollment_status(enrollment)
+        notify_user(
+            request.user,
+            f"You completed {quiz.title} with a score of {score}/{total} ({percentage:.2f}%).",
+            link=f"/quizzes/{quiz.pk}/result/",
+        )
 
         messages.success(request, f"Quiz submitted. Your score: {score}/{total} ({percentage:.2f}%).")
         return redirect("quizzes:quiz_result", pk=quiz.pk)

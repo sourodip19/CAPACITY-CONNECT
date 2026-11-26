@@ -4,6 +4,7 @@
     <a class="nav-link active" href="{% url 'accounts:trainer_dashboard' %}"><i class="bi bi-speedometer2"></i>Dashboard</a>
     <a class="nav-link" href="{% url 'courses:course_manage' %}"><i class="bi bi-journal-text"></i>Manage Courses</a>
     <a class="nav-link" href="{% url 'courses:course_create' %}"><i class="bi bi-plus-circle"></i>Create Course</a>
+    <a class="nav-link" href="{% url 'notifications:notification_list' %}"><i class="bi bi-bell"></i>Notifications</a>
     <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i>Profile</a>
 {% endblock %}
 {% block content %}
@@ -19,18 +20,24 @@
 <div class="card">
     <div class="card-header fw-semibold">Recent Courses</div>
     <div class="table-responsive">
-        <table class="table mb-0">
-            <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Created</th></tr></thead>
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Title</th><th>Category</th><th>Enrollments</th><th>Avg. Progress</th><th>Status</th></tr></thead>
             <tbody>
             {% for course in courses %}
                 <tr>
-                    <td>{{ course.title }}</td>
+                    <td><a href="{% url 'courses:course_detail' course.pk %}">{{ course.title }}</a></td>
                     <td>{{ course.category }}</td>
+                    <td>{{ course.enrollment_count }}</td>
+                    <td style="min-width: 160px;">
+                        <div class="d-flex justify-content-between small mb-1"><span>{{ course.average_progress }}%</span></div>
+                        <div class="progress" role="progressbar" aria-valuenow="{{ course.average_progress }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-success" style="width: {{ course.average_progress }}%"></div>
+                        </div>
+                    </td>
                     <td><span class="badge badge-status-{{ course.status|lower }}">{{ course.get_status_display }}</span></td>
-                    <td>{{ course.created_at|date:"M d, Y" }}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4"><div class="empty-state"><i class="bi bi-journal-plus"></i><p class="mb-0">No courses yet. <a href="{% url 'courses:course_create' %}">Create your first course</a>.</p></div></td></tr>
+                <tr><td colspan="5"><div class="empty-state"><i class="bi bi-journal-plus"></i><p class="mb-0">No courses yet. <a href="{% url 'courses:course_create' %}">Create your first course</a>.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>
