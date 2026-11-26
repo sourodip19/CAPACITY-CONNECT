@@ -82,3 +82,15 @@ class CoursePhase3Tests(TestCase):
         response = self.client.get(reverse("courses:course_detail", args=[self.course.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Python Basics")
+
+    def test_course_search_filters_results(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("courses:course_list"), {"q": "Python"})
+        self.assertContains(response, "Python Basics")
+        response = self.client.get(reverse("courses:course_list"), {"q": "Nonexistent"})
+        self.assertNotContains(response, "Python Basics")
+
+    def test_student_cannot_access_course_manage(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("courses:course_manage"))
+        self.assertEqual(response.status_code, 403)

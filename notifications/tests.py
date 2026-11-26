@@ -45,3 +45,13 @@ class NotificationTests(TestCase):
         response = self.client.post(reverse("notifications:notification_mark_all_read"))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Notification.objects.filter(recipient=self.student, is_read=False).count(), 0)
+
+    def test_mark_read_redirects_to_notification_link(self):
+        notification = Notification.objects.create(
+            recipient=self.student, message="Go to course", link=reverse("courses:course_list")
+        )
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("notifications:notification_mark_read", args=[notification.pk]))
+        self.assertRedirects(response, reverse("courses:course_list"), fetch_redirect_response=False)
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)

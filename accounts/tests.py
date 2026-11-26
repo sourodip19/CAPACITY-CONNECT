@@ -91,3 +91,36 @@ class AccountsPhase2Tests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
         self.assertContains(response, "alert-danger")
+
+    def test_profile_page_requires_login_and_loads(self):
+        response = self.client.get(reverse("accounts:profile"))
+        self.assertEqual(response.status_code, 302)
+        student = self.create_user("student5", User.Role.STUDENT)
+        self.client.force_login(student)
+        response = self.client.get(reverse("accounts:profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "My Profile")
+
+    def test_password_change_updates_password(self):
+        student = self.create_user("student6", User.Role.STUDENT)
+        self.client.force_login(student)
+        response = self.client.post(
+            reverse("accounts:password_change"),
+            {
+                "old_password": "Testpass123!",
+                "new_password1": "NewStrongPass123!",
+                "new_password2": "NewStrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("accounts:profile"))
+        student.refresh_from_db()
+        self.assertTrue(student.check_password("NewStrongPass123!"))
+
+    def test_admin_can_deactivate_user(self):
+        admin = self.create_user("admin3", User.Role.ADMIN)
+        student = self.create_user("student7", User.Role.STUDENT)
+        self.client.force_login(admin)
+        response = self.client.post(reverse("accounts:toggle_user_active", args=[student.pk]))
+        self.assertRedirects(response, reverse("accounts:manage_users"))
+        student.refresh_from_db()
+        self.assertFalse(student.is_active)
